@@ -1,0 +1,118 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/colorSelector"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:visibility="visible">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:background="#333333"
+        android:orientation="vertical"
+        android:padding="50px">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#FFFFFF"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/btnColorPreview"
+                android:layout_width="match_parent"
+                android:layout_height="200px"
+                android:background="#F00" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="#555555"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="#"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp" />
+
+                <EditText
+                    android:id="@+id/strColor"
+                    android:layout_width="150sp"
+                    android:layout_height="wrap_content"
+                    android:background="#555555"
+                    android:imeOptions="actionDone"
+                    android:maxLength="8"
+                    android:padding="5sp"
+                    android:text="FFFF0000"
+                    android:textAlignment="center"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <SeekBar
+            android:id="@+id/colorA"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="30px"
+            android:progress="255"
+            android:progressDrawable="@drawable/seekbar_a_progress"
+            android:thumb="@drawable/seekbar_a_thumb"
+            android:visibility="gone" />
+
+        <SeekBar
+            android:id="@+id/colorR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="30px"
+            android:progress="255"
+            android:progressDrawable="@drawable/seekbar_r_progress"
+            android:thumb="@drawable/seekbar_r_thumb" />
+
+        <SeekBar
+            android:id="@+id/colorG"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="30px"
+            android:progress="0"
+            android:progressDrawable="@drawable/seekbar_g_progress"
+            android:thumb="@drawable/seekbar_g_thumb" />
+
+        <SeekBar
+            android:id="@+id/colorB"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.9"
+            android:padding="30px"
+            android:progress="0"
+            android:progressDrawable="@drawable/seekbar_b_progress"
+            android:thumb="@drawable/seekbar_b_thumb" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30px"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/colorCancelBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:background="#CCCCCC"
+                android:text="@string/cancel" />
+
+            <Button
+                android:id="@+id/colorOkBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:background="#EEEEEE"
+                android:text="@string/apply" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>
