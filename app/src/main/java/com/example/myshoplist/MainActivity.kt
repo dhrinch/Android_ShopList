@@ -1,5 +1,7 @@
 package com.example.myshoplist
 
+import android.Manifest
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -137,6 +139,7 @@ class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
     }
 
     override fun onDialogPositiveClick(item: ShoppingListItem) {
+        val intent1 = Intent()
         val handler = Handler(Handler.Callback {
             Toast.makeText(applicationContext, it.data.getString("message"), Toast.LENGTH_SHORT)
                 .show()
@@ -147,9 +150,17 @@ class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
             val id = db.DAO().insert(item)
             item.id = id.toInt()
             shopList.add(item)
-            val message = Message.obtain()
+            /*val message = Message.obtain()
             message.data.putString("message", "Item added to list")
-            handler.sendMessage(message)
+            handler.sendMessage(message)*/
+
+
+        intent.component = ComponentName("com.android.application", "com.android.application.MyReceiver")
+        //intent.setClassName("com.example.broadcastlistener", "com.example.broadcastlistener.MyReceiver")
+            intent1.setAction("com.example.testbroadcast.MY_INTENT")
+        //intent1.setPackage("com.example.*")
+        intent1.putExtra("data", "Notice me senpai!")
+        sendBroadcast(intent1, Manifest.permission.SEND_SMS)
         }).start()
     }
 
