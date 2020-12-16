@@ -10,6 +10,8 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
+import android.provider.SyncStateContract
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -20,16 +22,26 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
+import com.beust.klaxon.Klaxon
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.core.Constants
 import kotlinx.android.synthetic.main.content_main.*
+import org.json.JSONObject
 
 
 class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
 
     private var shopList: MutableList<ShoppingListItem> = ArrayList()
     private lateinit var adapter: RecyclerViewAdapter
-    private lateinit var db: RoomDB
+    //private lateinit var db: RoomDB
     private lateinit var sp: SharedPreferences
+
+    private val database = FirebaseDatabase.getInstance()
+    val ref = database.getReference("shopList")
 
     override fun onStart(){
         super.onStart()
@@ -47,8 +59,30 @@ class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
         adapter = RecyclerViewAdapter(shopList)
         recyclerView.adapter = adapter
 
-        db = Room.databaseBuilder(applicationContext, RoomDB::class.java, "sl_db").build()
-        loadShopListItems()
+        /*db = Room.databaseBuilder(applicationContext, RoomDB::class.java, "sl_db").build()
+        loadShopListItems()*/
+
+        //reading from FireBase on init
+        ref.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if(snapshot.exists()){
+                    val hash = snapshot.value as HashMap<*, *>
+
+                    for((k,v) in hash) {
+                        val json = JSONObject(v.toString())
+                        val result = Klaxon().parse<ShoppingListItem>(json.toString())
+                        if (result != null) {
+                            shopList.add(result)
+                        }
+                    }
+                    adapter.notifyDataSetChanged()
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.w("TAG", "Failed to read value", error.toException())
+            }
+        })
 
         val fab = findViewById<FloatingActionButton>(R.id.fab)
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
@@ -80,7 +114,7 @@ class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
                 val id = shopList[position].id
                 shopList.removeAt(position)
                 Thread(Runnable {
-                    db.DAO().delete(id)
+                    //db.DAO().delete(id)
                     val message = Message.obtain()
                     message.data.putString("message", "Item removed")
                     handler.sendMessage(message)
@@ -108,7 +142,7 @@ class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
             true
         })
         Thread(Runnable {
-            shopList = db.DAO().getAll()
+            //shopList = db.DAO().getAll()
             val message = Message.obtain()
             if (shopList.size > 0)
                 message.data.putString("message", "List loaded")
@@ -147,12 +181,17 @@ class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
             true
         })
         Thread(Runnable {
-            val id = db.DAO().insert(item)
-            item.id = id.toInt()
+            val id = ref.push().key.toString()
+            //val id = db.DAO().insert(item)
+            //item.id = id.toInt()
+            val a = ref.child(id).setValue(item)
             shopList.add(item)
             /*val message = Message.obtain()
             message.data.putString("message", "Item added to list")
             handler.sendMessage(message)*/
+            //adapter.notifyDataSetChanged()
+
+
 
 
         intent.component = ComponentName("com.android.application", "com.android.application.MyReceiver")
