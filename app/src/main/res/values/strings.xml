@@ -54,4 +54,26 @@
     <string name="invalid_username">Not a valid username</string>
     <string name="invalid_password">Password must be >5 characters</string>
     <string name="login_failed">"Login failed"</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="login_register">Login / Register</string>
+    <string name="continue_anonymously">Continue anonymously</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="add_to_favorites">Add to favorites</string>
+    <string name="location_name">Location Name</string>
+    <string name="longitude">Longitude</string>
+    <string name="latitude">Latitude</string>
+    <string name="shop_longitude">Shop longitude</string>
+    <string name="shop_latitude">Shop latitude</string>
+    <string name="geofence_radius">Geofence radius</string>
+    <string name="fence_radius">Fence Radius</string>
+    <string name="shop_description">Shop description</string>
+    <string name="description">Description</string>
+    <string name="shop_name">Shop name</string>
+    <string name="title_activity_main2">MainActivity2</string>
+    <!--
+    This string is used for square devices and overridden by hello_world in
+    values-round/strings.xml for round devices.
+    -->
+    <string name="hello_world">Hello Square World!</string>
 </resources>

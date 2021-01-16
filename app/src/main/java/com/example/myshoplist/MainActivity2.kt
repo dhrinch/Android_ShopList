@@ -10,7 +10,6 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -20,123 +19,69 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.beust.klaxon.Klaxon
+import androidx.room.Room
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.content_main.*
-import org.json.JSONObject
 
-class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
+class MainActivity2 : AppCompatActivity(), AddShopDialogFragment.AddDialogListener {
 
-    private var shopList: MutableList<ShoppingListItem> = ArrayList()
-    private lateinit var adapter: RecyclerViewAdapter
+    private var shopList: MutableList<ShopItem> = ArrayList()
+    private lateinit var adapter: ShopListAdapter
     private lateinit var sp: SharedPreferences
-    private lateinit var auth: FirebaseAuth
-    //private lateinit var db: RoomDB
-    //private lateinit var binding: ActivityCustomBinding
-
-    val db = FirebaseDatabase.getInstance()
-    val ref = db.getReference("shopList")
+    private lateinit var db: RoomDB
 
     override fun onStart(){
         super.onStart()
         setBarColor()
-        val currentUser = auth.currentUser
-        updateUI(currentUser)
-
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_main2)
         setSupportActionBar(findViewById(R.id.toolbar))
 
-        auth = Firebase.auth
         sp = getSharedPreferences("Prefs", Context.MODE_PRIVATE)
 
-        //reading from FireBase on init
-        ref.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()) {
-                    val hash = snapshot.value as HashMap<*, *>
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        adapter = ShopListAdapter(shopList)
+        recyclerView.adapter = adapter
 
-                    for ((k, v) in hash) {
-                        val json = JSONObject(v.toString())
-                        val result = Klaxon().parse<ShoppingListItem>(json.toString())
-                        if (result != null) {
-                            shopList.add(result)
-                        }
-                    }
-                    adapter.notifyDataSetChanged()
-                }
-            }
+        db = Room.databaseBuilder(applicationContext, RoomDB::class.java, "shops_db").build()
+        loadShopListItems()
+        loadShops()
 
-            override fun onCancelled(error: DatabaseError) {
-                Log.w("TAG", "Failed to read value", error.toException())
-            }
-        })
-            recyclerView.layoutManager = LinearLayoutManager(this)
-            adapter = RecyclerViewAdapter(shopList)
-            recyclerView.adapter = adapter
-
-            /*db = Room.databaseBuilder(applicationContext, RoomDB::class.java, "sl_db").build()
-        loadShopListItems()*/
-
-            val fab = findViewById<FloatingActionButton>(R.id.fab)
-            findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
-                val dialog = DialogFragmentItem()
-                dialog.show(supportFragmentManager, "AskNewItemDialogFragment")
-            }
-
-            initSwipe()
-            checkTheme()
-    }
-
-    private fun updateUI(user: FirebaseUser?) {
-        val isSignedIn = user != null
-
-        // Status text
-        if (isSignedIn) {
-
-        } else {
-
+        val fab = findViewById<FloatingActionButton>(R.id.fab)
+        findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
+            val dialog = AddShopDialogFragment()
+            dialog.show(supportFragmentManager, "AskNewItemDialogFragment")
         }
+
+        initSwipe()
+        checkTheme()
     }
 
     private fun initSwipe() {
         val simpleItemTouchCallback = object : ItemTouchHelper.SimpleCallback(
-                0,
-                ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+            0,
+            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
         ) {
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 val handler = Handler(Handler.Callback {
                     Toast.makeText(
-                            applicationContext,
-                            it.data.getString("message"),
-                            Toast.LENGTH_SHORT
+                        applicationContext,
+                        it.data.getString("message"),
+                        Toast.LENGTH_SHORT
                     ).show()
                     adapter.update(shopList)
                     true
                 })
-                val name = shopList[position].name
+                val id = shopList[position].id
                 shopList.removeAt(position)
 
-                val mDB = db.getReference("shop-list")
-                val item = mDB.child(name).removeValue()
-
                 Thread(Runnable {
-                    //db.DAO().delete(id)
-
-
+                    db.DAO().delete(id)
 
                     val message = Message.obtain()
                     message.data.putString("message", "Item removed")
@@ -145,9 +90,9 @@ class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
             }
 
             override fun onMove(
-                    p0: RecyclerView,
-                    p1: RecyclerView.ViewHolder,
-                    p2: RecyclerView.ViewHolder
+                p0: RecyclerView,
+                p1: RecyclerView.ViewHolder,
+                p2: RecyclerView.ViewHolder
             ): Boolean {
                 return true
             }
@@ -159,7 +104,25 @@ class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
     private fun loadShopListItems() {
         val handler = Handler(Handler.Callback {
             Toast.makeText(applicationContext, it.data.getString("message"), Toast.LENGTH_SHORT)
-                    .show()
+                .show()
+            adapter.update(shopList)
+            true
+        })
+        Thread(Runnable {
+            //shopList = db.DAO().getAll()
+            val message = Message.obtain()
+            if (shopList.size > 0)
+                message.data.putString("message", "List loaded")
+            else
+                message.data.putString("message", "List is empty")
+            handler.sendMessage(message)
+        }).start()
+    }
+
+    private fun loadShops() {
+        val handler = Handler(Handler.Callback {
+            Toast.makeText(applicationContext, it.data.getString("message"), Toast.LENGTH_SHORT)
+                .show()
             adapter.update(shopList)
             true
         })
@@ -194,24 +157,23 @@ class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
         //intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 
-    override fun onDialogPositiveClick(item: ShoppingListItem) {
+    override fun onDialogPositiveClick(item: ShopItem) {
         val intent1 = Intent()
         val handler = Handler(Handler.Callback {
             Toast.makeText(applicationContext, it.data.getString("message"), Toast.LENGTH_SHORT)
-                    .show()
+                .show()
             adapter.update(shopList)
             true
         })
         Thread(Runnable {
-            val id = ref.push().key.toString()
-            //val id = db.DAO().insert(item)
-            //item.id = id.toInt()
-            val a = ref.child(id).setValue(item)
+
+            val id = db.DAO().insert(item)
+            item.id = id.toInt()
             shopList.add(item)
-            /*val message = Message.obtain()
-            message.data.putString("message", "Item added to list")
-            handler.sendMessage(message)*/
-            //adapter.notifyDataSetChanged()
+            val message = Message.obtain()
+            message.data.putString("message", "Shop added to list")
+            handler.sendMessage(message)
+            adapter.notifyDataSetChanged()
 
 
             intent.component = ComponentName("com.android.application", "com.android.application.MyReceiver")
@@ -224,16 +186,6 @@ class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
     }
 
     private fun checkTheme() {
-        /*when (Prefs(this).darkMode) {
-            0 -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                delegate.applyDayNight()
-            }
-            1 -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                delegate.applyDayNight()
-            }
-        }*/
         if (sp.getBoolean("darkMode", true)) {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             delegate.applyDayNight()
@@ -249,19 +201,4 @@ class MainActivity : AppCompatActivity(), DialogFragmentItem.AddDialogListener {
         val colorDrawable = ColorDrawable(Color.parseColor(actionBarColor))
         actionBar?.setBackgroundDrawable(colorDrawable)
     }
-
-    /*override fun onStop() {
-        super.onStop()
-        //editor.putBoolean(intent.DarkTheme)
-        editor.apply()
-    }*/
-
-    /*fun click(view: View) {
-        if (cb_isBought.isChecked) {
-            val intent1 = Intent(this, SecondaryActivity::class.java)
-            intent1.putExtra("str1", editText1.text.toString())
-            startActivity(intent1)
-        } else {
-        }
-    }*/
 }

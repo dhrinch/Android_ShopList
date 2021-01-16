@@ -18,21 +18,21 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
-            android:id="@+id/tv_ItemName"
+            android:id="@+id/tv_ShopName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/item" />
 
         <TextView
-            android:id="@+id/tv_Count"
+            android:id="@+id/tv_ShopDesc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/amount" />
 
         <TextView
-            android:id="@+id/tv_Price"
+            android:id="@+id/tv_ShopCoordsLat"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"

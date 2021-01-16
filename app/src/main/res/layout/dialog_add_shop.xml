@@ -25,10 +25,10 @@
 
             <TextView
                 android:id="@+id/tv_shopName"
-                android:layout_width="wrap_content"
+                android:layout_width="70dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/item" />
+                android:text="@string/shop_name" />
 
             <EditText
                 android:id="@+id/et_shopName"
@@ -37,7 +37,7 @@
                 android:layout_weight="1"
                 android:autofillHints="true"
                 android:ems="10"
-                android:hint="@string/add_item"
+                android:hint="@string/shop_name"
                 android:inputType="text" />
 
         </LinearLayout>
@@ -49,10 +49,10 @@
 
             <TextView
                 android:id="@+id/tv_shopDesc"
-                android:layout_width="29dp"
+                android:layout_width="70dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/amount" />
+                android:text="@string/description" />
 
             <EditText
                 android:id="@+id/et_shopDescription"
@@ -61,8 +61,8 @@
                 android:layout_weight="1"
                 android:autofillHints="true"
                 android:ems="10"
-                android:hint="@string/how_many"
-                android:inputType="number" />
+                android:hint="@string/shop_description"
+                android:inputType="text" />
         </LinearLayout>
 
         <LinearLayout
@@ -72,10 +72,10 @@
 
             <TextView
                 android:id="@+id/tv_Radius"
-                android:layout_width="wrap_content"
+                android:layout_width="70dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/cost" />
+                android:text="@string/fence_radius" />
 
             <EditText
                 android:id="@+id/et_fenceRadius"
@@ -84,8 +84,55 @@
                 android:layout_weight="1"
                 android:autofillHints="true"
                 android:ems="10"
-                android:hint="@string/enter_price"
+                android:hint="@string/geofence_radius"
                 android:inputType="numberDecimal" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tv_lat"
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/shop_latitude" />
+
+            <EditText
+                android:id="@+id/et_shopLat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:autofillHints="true"
+                android:ems="10"
+                android:hint="@string/shop_latitude"
+                android:inputType="number" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tv_long"
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/shop_longitude" />
+
+            <EditText
+                android:id="@+id/et_shopLong"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:autofillHints="true"
+                android:ems="10"
+                android:hint="@string/shop_longitude"
+                android:inputType="number" />
+
         </LinearLayout>
 
     </LinearLayout>

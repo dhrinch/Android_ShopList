@@ -18,9 +18,9 @@ class DialogFragmentItem : DialogFragment() {
             builder.setTitle(R.string.dialog_title)
                     .setMessage(R.string.dialog_message)
                     .setPositiveButton(R.string.dialog_ok) { dialog, id ->
-                        val name = customView.editItem.text.toString()
-                        val count = customView.editCount.text.toString().toInt()
-                        val price = customView.editPrice.text.toString().toDouble()
+                        val name = customView.et_shopName.text.toString()
+                        val count = customView.et_shopDescription.text.toString().toInt()
+                        val price = customView.et_fenceRadius.text.toString().toDouble()
                         val item = ShoppingListItem(0, name, count, price)
                         mListener.onDialogPositiveClick(item)
                         dialog.dismiss()
