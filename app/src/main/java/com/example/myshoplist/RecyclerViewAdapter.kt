@@ -24,9 +24,9 @@ class RecyclerViewAdapter (var shopList: MutableList<ShoppingListItem>) : Recycl
     }
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val nameTextView: TextView = view.tv_ShopName
-        val countTextView: TextView = view.tv_ShopDesc
-        val priceTextView: TextView = view.tv_ShopCoordsLat
+        val nameTextView: TextView = view.tv_ItemName
+        val countTextView: TextView = view.tv_Count
+        val priceTextView: TextView = view.tv_Price
     }
 
     fun update(newList: MutableList<ShoppingListItem>) {

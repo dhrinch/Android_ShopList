@@ -1,7 +1,5 @@
 package com.example.myshoplist
 
-import android.Manifest
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -23,7 +21,7 @@ import androidx.room.Room
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.android.synthetic.main.content_main.*
 
-class MainActivity2 : AppCompatActivity(), AddShopDialogFragment.AddDialogListener {
+class MainActivity2 : AppCompatActivity()/*, AddShopDialogFragment.AddDialogListener*/ {
 
     private var shopList: MutableList<ShopItem> = ArrayList()
     private lateinit var adapter: ShopListAdapter
@@ -47,13 +45,12 @@ class MainActivity2 : AppCompatActivity(), AddShopDialogFragment.AddDialogListen
         recyclerView.adapter = adapter
 
         db = Room.databaseBuilder(applicationContext, RoomDB::class.java, "shops_db").build()
-        loadShopListItems()
         loadShops()
 
         val fab = findViewById<FloatingActionButton>(R.id.fab)
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
-            val dialog = AddShopDialogFragment()
-            dialog.show(supportFragmentManager, "AskNewItemDialogFragment")
+            val intent = Intent(this, MapsActivity::class.java)
+            startActivity(intent)
         }
 
         initSwipe()
@@ -101,24 +98,6 @@ class MainActivity2 : AppCompatActivity(), AddShopDialogFragment.AddDialogListen
         itemTouchHelper.attachToRecyclerView(recyclerView)
     }
 
-    private fun loadShopListItems() {
-        val handler = Handler(Handler.Callback {
-            Toast.makeText(applicationContext, it.data.getString("message"), Toast.LENGTH_SHORT)
-                .show()
-            adapter.update(shopList)
-            true
-        })
-        Thread(Runnable {
-            //shopList = db.DAO().getAll()
-            val message = Message.obtain()
-            if (shopList.size > 0)
-                message.data.putString("message", "List loaded")
-            else
-                message.data.putString("message", "List is empty")
-            handler.sendMessage(message)
-        }).start()
-    }
-
     private fun loadShops() {
         val handler = Handler(Handler.Callback {
             Toast.makeText(applicationContext, it.data.getString("message"), Toast.LENGTH_SHORT)
@@ -127,7 +106,7 @@ class MainActivity2 : AppCompatActivity(), AddShopDialogFragment.AddDialogListen
             true
         })
         Thread(Runnable {
-            //shopList = db.DAO().getAll()
+            shopList = db.DAO().getAll()
             val message = Message.obtain()
             if (shopList.size > 0)
                 message.data.putString("message", "List loaded")
@@ -143,46 +122,24 @@ class MainActivity2 : AppCompatActivity(), AddShopDialogFragment.AddDialogListen
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        val id = item.getItemId()
+        val id = item.itemId
         if(id == R.id.action_settings) Setting(this)
+        if(id == R.id.menu_map)Map(this)
         return when (item.itemId) {
             R.id.action_settings -> true
             else -> super.onOptionsItemSelected(item)
         }
     }
 
-    fun Setting(context: Context) {
+    private fun Setting(context: Context) {
         val intent = Intent(this, SettingsActivity::class.java)
         startActivity(intent)
         //intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 
-    override fun onDialogPositiveClick(item: ShopItem) {
-        val intent1 = Intent()
-        val handler = Handler(Handler.Callback {
-            Toast.makeText(applicationContext, it.data.getString("message"), Toast.LENGTH_SHORT)
-                .show()
-            adapter.update(shopList)
-            true
-        })
-        Thread(Runnable {
-
-            val id = db.DAO().insert(item)
-            item.id = id.toInt()
-            shopList.add(item)
-            val message = Message.obtain()
-            message.data.putString("message", "Shop added to list")
-            handler.sendMessage(message)
-            adapter.notifyDataSetChanged()
-
-
-            intent.component = ComponentName("com.android.application", "com.android.application.MyReceiver")
-            //intent.setClassName("com.example.broadcastlistener", "com.example.broadcastlistener.MyReceiver")
-            intent1.setAction("com.example.testbroadcast.MY_INTENT")
-            //intent1.setPackage("com.example.*")
-            intent1.putExtra("data", "Notice me senpai!")
-            sendBroadcast(intent1, Manifest.permission.SEND_SMS)
-        }).start()
+    private fun Map(context: Context) {
+        val intent = Intent(this, MapsActivity::class.java)
+        startActivity(intent)
     }
 
     private fun checkTheme() {
@@ -195,7 +152,7 @@ class MainActivity2 : AppCompatActivity(), AddShopDialogFragment.AddDialogListen
         }
     }
 
-    fun setBarColor() {
+    private fun setBarColor() {
         val actionBar: ActionBar? = supportActionBar
         val actionBarColor = sp.getString("toolbarColor", "#0F9D58")
         val colorDrawable = ColorDrawable(Color.parseColor(actionBarColor))

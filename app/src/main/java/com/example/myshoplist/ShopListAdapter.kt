@@ -20,6 +20,7 @@ class ShopListAdapter (var shops: MutableList<ShopItem>) : RecyclerView.Adapter<
         val item: ShopItem = shops[position]
         holder.nameTextView.text = item.name
         holder.descTextView.text = item.desc
+        holder.address.text = item.address
         holder.radiusTextView.text = item.radius.toString()
         holder.longTextView.text = item.coords_long.toString()
         holder.latTextView.text = item.coords_lat.toString()
@@ -28,6 +29,7 @@ class ShopListAdapter (var shops: MutableList<ShopItem>) : RecyclerView.Adapter<
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val nameTextView: TextView = view.tv_name
         val descTextView: TextView = view.tv_desc
+        val address: TextView = view.tv_address
         val radiusTextView: TextView = view.tv_fenceRad
         val longTextView: TextView = view.tv_shopLong
         val latTextView: TextView = view.tv_shopLat

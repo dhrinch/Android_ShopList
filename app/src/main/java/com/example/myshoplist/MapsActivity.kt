@@ -1,7 +1,6 @@
 package com.example.myshoplist
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.PendingIntent
 import android.content.Intent
@@ -10,10 +9,12 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.room.Room
@@ -23,13 +24,17 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.firebase.database.ChildEventListener
 import kotlinx.android.synthetic.main.activity_maps.*
 import java.util.*
+import java.util.concurrent.Executors
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener, AddShopDialogFragment.AddDialogListener {
+
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnMarkerDragListener ,AddShopDialogFragment.AddDialogListener {
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -46,14 +51,29 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var adapter: ShopListAdapter
     private lateinit var sp: SharedPreferences
     private lateinit var db: RoomDB
+    private lateinit var geofencingClient:GeofencingClient
+    private lateinit var permissions:Array<String>
+    private lateinit var mChildEventListener: ChildEventListener
+    private lateinit var marker : Marker
 
+    private fun getGeofencePendingIntent(): PendingIntent {
+        return PendingIntent.getBroadcast(
+            this,
+            0,
+            Intent(this, GeofenceBroadcastReceiver::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
 
-        val permissions = arrayOf(
+        permissions = arrayOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
         )
         if (ActivityCompat.checkSelfPermission(
                 this,
@@ -65,11 +85,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         ) {
             requestPermissions(permissions, 0)
         }
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         val mapFragment = supportFragmentManager
                 .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        /*ChildEventListener mChildEventListener;
+        mUsers= db.getInstance().getReference("coordinates");
+        mUsers.push().setValue(marker);*/
+
+        geofencingClient = LocationServices.getGeofencingClient(this)
+
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(p0: LocationResult) {
                 super.onLocationResult(p0)
@@ -77,89 +104,25 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 //placeMarkerOnMap(LatLng(lastLocation.latitude, lastLocation.longitude))
             }
         }
-        var id = 0
-        btn_addFavorite.setOnClickListener {
-            val radius = 100F
-            fusedLocationClient.lastLocation
-                .addOnCompleteListener {
-                    val place = LatLng(it.result.latitude, it.result.longitude)
-                    val marker = MarkerOptions()
-                    marker.position(place)
-                    marker.title(et_placeName.text.toString())
-                    marker.snippet(getAddress(place))
-                    map.addMarker(marker)
-                    map.moveCamera(CameraUpdateFactory.newLatLng(place))
+        //var id = 0
 
-                    val dialog = AddShopDialogFragment()
-                    //val bundle = Bundle()
-
-                    //bundle.putFloat("radius", radius)
-                    //bundle.putString("lat", place.latitude.toString())
-                    //bundle.putString("long", place.longitude.toString())
-
-                    //dialog.arguments = bundle
-
-                    /*val intent = Intent(this@MapsActivity, AddShopDialogFragment::class.java)
-                    intent.putExtra("lat", place.latitude.toString())
-                    intent.putExtra("long", place.longitude.toString())
-                    startActivity(intent)*/
-                    dialog.show(supportFragmentManager, "AskNewItemDialogFragment")
-
-                    val geo = Geofence.Builder().setRequestId("Geofence${id++}")
-                        .setCircularRegion(
-                            place.latitude,
-                            place.longitude,
-                            radius
-                        )
-                            .setExpirationDuration(60 * 60 * 1000)
-                            .setTransitionTypes(
-                                Geofence.GEOFENCE_TRANSITION_ENTER or
-                                Geofence.GEOFENCE_TRANSITION_EXIT
-                            )
-                        .build()
-                    val geoClient = LocationServices.getGeofencingClient(this)
-                    geoClient.addGeofences(getGeofencingRequest(geo), getGeofencePendingIntent())
-                        .addOnSuccessListener {
-                            Toast.makeText(
-                                this@MapsActivity,
-                                "Geofence added at${getAddress(place)}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                        .addOnFailureListener {
-                            Toast.makeText(
-                                this@MapsActivity,
-                                "Failed to add geofence at${getAddress(place)}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                }
-        }
-
-        db = Room.databaseBuilder(applicationContext, RoomDB::class.java, "shops_db").build()
 
         createLocationRequest()
     }
 
     private fun getAddress(place: LatLng): String{
-        val geocoder = Geocoder(this, Locale.getDefault())
-        return geocoder.getFromLocation(place.latitude, place.longitude, 1)[0].getAddressLine(0)
+        val geocoder = Geocoder(this)
+        val list = geocoder.getFromLocation(place.latitude, place.longitude, 1)
+        return list[0].getAddressLine(0)
     }
+
 
     private fun getGeofencingRequest(geofence: Geofence): GeofencingRequest{
         return GeofencingRequest.Builder()
             .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_EXIT)
             .addGeofence(geofence)
             .build()
-    }
-
-    private fun getGeofencePendingIntent(): PendingIntent {
-        return PendingIntent.getBroadcast(
-            this,
-            0,
-            Intent(this, GeofenceReceiver::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT
-        )
     }
 
     private fun startLocationUpdates() {
@@ -174,7 +137,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             )
             return
         }
-
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(permissions, 0)
+        }
         fusedLocationClient.requestLocationUpdates(
             locationRequest,
             locationCallback,
@@ -200,17 +172,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         }
         task.addOnFailureListener { e ->
             if (e is ResolvableApiException) {
-                // Location settings are not satisfied, but this can be fixed
-                // by showing the user a dialog.
                 try {
-                    // Show the dialog by calling startResolutionForResult(),
-                    // and check the result in onActivityResult().
                     e.startResolutionForResult(
                         this@MapsActivity,
                         REQUEST_CHECK_SETTINGS
                     )
                 } catch (sendEx: IntentSender.SendIntentException) {
-                    // Ignore the error.
                 }
             }
         }
@@ -247,35 +214,54 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         map.addMarker(markerOptions)
     }*/
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
-    @SuppressLint("MissingPermission")
+    //@SuppressLint("MissingPermission")
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
 
         map.uiSettings.isZoomControlsEnabled = true
         map.setOnMarkerClickListener(this)
+        map.setOnMarkerDragListener(this)
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(permissions, 0)
+        }
         map.isMyLocationEnabled = true
 
         setUpMap()
+        setMapLongClick(map)
+        setPoiClick(map)
+
+        db = Room.databaseBuilder(applicationContext, RoomDB::class.java, "shop_table").allowMainThreadQueries().build()
+
+        val allMarkers = db.DAO().getAll()
+        val marker = MarkerOptions()
+        Executors.newSingleThreadExecutor().execute {
+            allMarkers.forEach() {
+                val place = LatLng(it.coords_lat.toDouble(), it.coords_long.toDouble())
+                marker.position(place)
+                marker.title(it.name)
+                marker.snippet(getAddress(place))
+                map.addMarker(marker)
+            }
+        }
     }
 
+
     override fun onDialogPositiveClick(item: ShopItem) {
+        db = Room.databaseBuilder(applicationContext, RoomDB::class.java, "shops_db")./*allowMainThreadQueries().*/build()
         val handler = Handler(Handler.Callback {
-            Toast.makeText(applicationContext, it.data.getString("message"), Toast.LENGTH_SHORT)
+            Toast.makeText(application, it.data.getString("message"), Toast.LENGTH_SHORT)
                 .show()
             adapter.update(shopList)
             true
         })
         Thread(Runnable {
-
             val id = db.DAO().insert(item)
             item.id = id.toInt()
             shopList.add(item)
@@ -286,7 +272,158 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         }).start()
     }
 
+    /*val radius = 100F
+    fusedLocationClient.lastLocation
+    .addOnCompleteListener {
+        val place = LatLng(it.result.latitude, it.result.longitude)
+        val marker = MarkerOptions()
+        marker.position(place)
+        marker.snippet(getAddress(place))
+        map.addMarker(marker)
+        map.moveCamera(CameraUpdateFactory.newLatLng(place))
+
+        val dialog = AddShopDialogFragment()
+        val bundle = Bundle()
+
+        bundle.putString("radius", radius.toString())
+        bundle.putString("lat", place.latitude.toString())
+        bundle.putString("long", place.longitude.toString())
+
+        dialog.arguments = bundle
+
+        dialog.show(supportFragmentManager, "AskNewItemDialogFragment")
+
+        val geo = Geofence.Builder().setRequestId("Geofence${id++}")
+                .setCircularRegion(
+                        place.latitude,
+                        place.longitude,
+                        radius
+                )
+                .setExpirationDuration(60 * 60 * 1000)
+                .setTransitionTypes(
+                        Geofence.GEOFENCE_TRANSITION_ENTER or
+                                Geofence.GEOFENCE_TRANSITION_EXIT
+                )
+                .build()
+        val geoClient = LocationServices.getGeofencingClient(this)
+        geoClient.addGeofences(getGeofencingRequest(geo), getGeofencePendingIntent())
+                .addOnSuccessListener {
+                    Toast.makeText(
+                            this@MapsActivity,
+                            "Geofence added at${getAddress(place)}",
+                            Toast.LENGTH_SHORT
+                    ).show()
+                }
+                .addOnFailureListener {
+                    Toast.makeText(
+                            this@MapsActivity,
+                            "Failed to add geofence at${getAddress(place)}",
+                            Toast.LENGTH_SHORT
+                    ).show()
+                }
+    }
+}*/
     override fun onMarkerClick(p0: Marker?) = false
+
+    private fun setMapLongClick(map: GoogleMap){
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            )!= PackageManager.PERMISSION_GRANTED
+        ){
+            requestPermissions(permissions, 10)
+        }
+        val radius = 100F
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(permissions, 0)
+        }
+        map.setOnMapLongClickListener { latLng ->
+            val place = LatLng(latLng.latitude, latLng.longitude)
+            val marker = MarkerOptions()
+                    .position(latLng)
+                    .draggable(true)
+                    .snippet(getAddress(latLng))
+            map.addMarker(marker)
+
+            map.moveCamera(CameraUpdateFactory.newLatLng(latLng))
+            val dialog = AddShopDialogFragment()
+            val bundle = Bundle()
+
+            bundle.putString("radius", radius.toString())
+            bundle.putString("lat", place.latitude.toString())
+            bundle.putString("long", place.longitude.toString())
+            bundle.putString("address", getAddress(place))
+
+            var id=0
+            val geo = Geofence.Builder().setRequestId("Geofence${id++}")
+                    .setCircularRegion(
+                        latLng.latitude,
+                        latLng.longitude,
+                        radius
+                    )
+                    .setExpirationDuration(60 * 60 * 1000)
+                    .setTransitionTypes(
+                        Geofence.GEOFENCE_TRANSITION_ENTER or
+                                Geofence.GEOFENCE_TRANSITION_EXIT
+                    )
+                    .build()
+            geofencingClient.addGeofences(getGeofencingRequest(geo), getGeofencePendingIntent())
+                    .addOnSuccessListener {
+                        Toast.makeText(
+                            this@MapsActivity,
+                            "Geofence added at${getAddress(place)}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(
+                            this@MapsActivity,
+                            "Failed to add geofence at${getAddress(place)}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+
+            dialog.arguments = bundle
+            dialog.show(supportFragmentManager, "AskNewItemDialogFragment")
+        }
+    }
+
+    private fun setPoiClick(map: GoogleMap) {
+        map.setOnPoiClickListener { poi ->
+            val poiMarker = map.addMarker(
+                MarkerOptions()
+                    .position(poi.latLng)
+                    .title(poi.name)
+            )
+            poiMarker.showInfoWindow()
+        }
+    }
+
+    override fun onMarkerDrag(p0: Marker?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onMarkerDragEnd(p0: Marker?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onMarkerDragStart(marker: Marker) {
+
+        marker.remove()
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)

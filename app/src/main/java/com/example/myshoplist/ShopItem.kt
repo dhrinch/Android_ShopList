@@ -9,6 +9,7 @@ data class ShopItem(
     var id: Int,
     var name: String,
     var desc: String,
+    var address: String,
     var radius: Float,
     var coords_lat: Double,
     var coords_long: Double

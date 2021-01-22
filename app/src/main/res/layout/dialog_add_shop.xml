@@ -25,10 +25,11 @@
 
             <TextView
                 android:id="@+id/tv_shopName"
-                android:layout_width="70dp"
+                android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/shop_name" />
+                android:text="@string/shop_name"
+                android:textSize="18sp" />
 
             <EditText
                 android:id="@+id/et_shopName"
@@ -49,10 +50,11 @@
 
             <TextView
                 android:id="@+id/tv_shopDesc"
-                android:layout_width="70dp"
+                android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/description" />
+                android:text="@string/description"
+                android:textSize="18sp" />
 
             <EditText
                 android:id="@+id/et_shopDescription"
@@ -67,15 +69,41 @@
 
         <LinearLayout
             android:layout_width="match_parent"
+            android:layout_height="67dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tv_address"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/address"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/tv_shopAddress"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/shop_address"
+                android:textSize="18sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/tv_Radius"
-                android:layout_width="70dp"
+                android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/fence_radius" />
+                android:text="@string/fence_radius"
+                android:textSize="18sp" />
 
             <EditText
                 android:id="@+id/et_fenceRadius"
@@ -95,20 +123,24 @@
 
             <TextView
                 android:id="@+id/tv_lat"
-                android:layout_width="70dp"
-                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="@string/shop_latitude" />
+                android:gravity="center"
+                android:text="@string/shop_latitude"
+                android:textAlignment="textStart"
+                android:textSize="18sp" />
 
-            <EditText
-                android:id="@+id/et_shopLat"
+            <TextView
+                android:id="@+id/tv_shopLatitude"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
                 android:layout_weight="1"
-                android:autofillHints="true"
-                android:ems="10"
-                android:hint="@string/shop_latitude"
-                android:inputType="number" />
+                android:gravity="center"
+                android:text="@string/shop_latitude"
+                android:textAlignment="textStart"
+                android:textSize="18sp" />
+
         </LinearLayout>
 
         <LinearLayout
@@ -118,20 +150,23 @@
 
             <TextView
                 android:id="@+id/tv_long"
-                android:layout_width="70dp"
-                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="@string/shop_longitude" />
+                android:gravity="center"
+                android:text="@string/shop_longitude"
+                android:textAlignment="textStart"
+                android:textSize="18sp" />
 
-            <EditText
-                android:id="@+id/et_shopLong"
+            <TextView
+                android:id="@+id/tv_shopLongitude"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
                 android:layout_weight="1"
-                android:autofillHints="true"
-                android:ems="10"
-                android:hint="@string/shop_longitude"
-                android:inputType="number" />
+                android:gravity="center"
+                android:text="@string/shop_longitude"
+                android:textAlignment="textStart"
+                android:textSize="18sp" />
 
         </LinearLayout>
 
